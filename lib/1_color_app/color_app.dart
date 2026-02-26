@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(
-    MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: Home()),
+    ChangeNotifierProvider(
+      create: (_) => ColorService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: Home()),
+      ),
     ),
   );
 }
 
-final ColorService colorService = ColorService();   // declear outside to make sure this can use colorService everywhere in your app
+// using Provider for state management instead of a global variable
+// The service will be provided at the top of the widget tree.
 
 enum CardType { red, blue }
 
@@ -85,23 +90,22 @@ class ColorTapsScreen extends StatelessWidget {  // in here, removed all constru
   });
   @override
   Widget build(BuildContext context) {
+    final service = context.watch<ColorService>();
     return Scaffold(
       appBar: AppBar(title: Text('Color Taps')),
-      body: ListenableBuilder(  // automatically rebuild the ui, so no need to refreh apge
-        listenable: colorService,
-
-          builder: (context, child) { 
-            return Column(
-              children: [
-                ColorTap(type: CardType.red, tapCount: colorService.redTapCount, onTap: colorService.incrementRedTapCount),
-                ColorTap(
-                  type: CardType.blue,
-                  tapCount: colorService.blueTapCount ,     // use globally
-                  onTap: colorService.incrementBlueTapCount,  
-                ),
-              ],
-            );
-          }
+      body: Column(
+        children: [
+          ColorTap(
+            type: CardType.red,
+            tapCount: service.redTapCount,
+            onTap: () => context.read<ColorService>().incrementRedTapCount(),
+          ),
+          ColorTap(
+            type: CardType.blue,
+            tapCount: service.blueTapCount,
+            onTap: () => context.read<ColorService>().incrementBlueTapCount(),
+          ),
+        ],
       ),
     );
   }
@@ -154,22 +158,18 @@ class StatisticsScreen extends StatelessWidget {    // this screen as well, to d
 
   @override
   Widget build(BuildContext context) {
+    final service = context.watch<ColorService>();
     return Scaffold(
       appBar: AppBar(title: Text('Statistics')),
       body: Center(
-        child: ListenableBuilder(
-          listenable: colorService,
-            builder: (context, child) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Red Taps: ${colorService.redTapCount}', style: TextStyle(fontSize: 24)),
-                  Text('Blue Taps: ${colorService.blueTapCount}', style: TextStyle(fontSize: 24)),
-                ],
-              );
-            }
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Red Taps: ${service.redTapCount}', style: TextStyle(fontSize: 24)),
+            Text('Blue Taps: ${service.blueTapCount}', style: TextStyle(fontSize: 24)),
+          ],
         ),
+      ),
     );
   }
 }
